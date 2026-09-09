@@ -1,0 +1,3 @@
+nama = "Ale"
+
+print(nama)
