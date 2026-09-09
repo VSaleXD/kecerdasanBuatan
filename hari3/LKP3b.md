@@ -1,368 +1,220 @@
-# Pengerjaan Graph Search LKP3b
+# LKP3b - Graph Search Dua Kasus
 
-Dokumen ini menjelaskan cara kerja BFS, DFS, dan UCS pada dua kasus:
+Dokumentasi berikut menampilkan adjacency list, urutan ekspansi node, isi frontier pada setiap iterasi, explored, dan solusi yang ditemukan.
 
-1. Jalur distribusi pupuk di Jawa Tengah
-2. Rute kapal di Sulawesi Selatan
+# Kasus 1 - Jalur Distribusi Pupuk di Jawa Tengah
 
-Pada kedua kasus, pencarian dimulai dari kota awal dan berhenti ketika kota tujuan ditemukan.
+## 1. Adjacency List
 
----
+```text
+Semarang: Kendal(20), Ungaran(15)
+Kendal: Semarang(20), Batang(25)
+Batang: Kendal(25), Pekalongan(30)
+Ungaran: Semarang(15), Ambarawa(10), Salatiga(20)
+Ambarawa: Ungaran(10), Magelang(25)
+Salatiga: Ungaran(20), Boyolali(18)
+Boyolali: Salatiga(18), Solo(22)
+Solo: Boyolali(22), Sragen(25), DesaA(30)
+Magelang: Ambarawa(25), DesaA(40)
+Sragen: Solo(25), DesaA(15)
+DesaA: Magelang(40), Sragen(15), Solo(30)
+```
 
-# Kasus 1: Jalur Distribusi Pupuk di Jawa Tengah
+Node awal adalah **Semarang** dan tujuan adalah **DesaA**.
 
-## 1. Data Masalah
+## 2. BFS
 
-- Titik awal: **Semarang**
-- Tujuan: **DesaA**
-- Satuan biaya: **KM**
-- Jalan bersifat dua arah karena graph menggunakan `directed=False`.
+BFS menggunakan queue FIFO. Node paling kiri adalah node yang diproses berikutnya.
 
----
+| Iterasi | Node diekspansi | Frontier setelah ekspansi | Explored | Solusi? |
+|---:|---|---|---|---|
+| 0 | Semarang | Kendal, Ungaran | Semarang | Tidak |
+| 1 | Kendal | Ungaran, Batang | Semarang, Kendal | Tidak |
+| 2 | Ungaran | Batang, Ambarawa, Salatiga | Semarang, Kendal, Ungaran | Tidak |
+| 3 | Batang | Ambarawa, Salatiga, Pekalongan | ..., Batang | Tidak |
+| 4 | Ambarawa | Salatiga, Pekalongan, Magelang | ..., Ambarawa | Tidak |
+| 5 | Salatiga | Pekalongan, Magelang, Boyolali | ..., Salatiga | Tidak |
+| 6 | Pekalongan | Magelang, Boyolali | ..., Pekalongan | Tidak |
+| 7 | Magelang | Boyolali, DesaA | ..., Magelang | YA |
 
-## 2. Breadth-First Search (BFS)
-
-### Cara kerja
-
-BFS menggunakan **queue** dengan aturan FIFO (*First In, First Out*). Kota yang masuk lebih dahulu akan diproses lebih dahulu. BFS mencari berdasarkan tingkat kedalaman, bukan berdasarkan jarak.
-
-Kota yang sudah ditemukan tidak dimasukkan kembali ke queue agar pencarian tidak berputar pada jalan yang sama.
-
-### Simulasi queue
-
-Kota paling kiri adalah kota yang akan diproses berikutnya.
-
-| Langkah | Kota yang diproses | Isi queue setelah tetangga ditambahkan |
-|---:|---|---|
-| 0 | - | Semarang |
-| 1 | Semarang | Kendal, Ungaran |
-| 2 | Kendal | Ungaran, Batang |
-| 3 | Ungaran | Batang, Ambarawa, Salatiga |
-| 4 | Batang | Ambarawa, Salatiga, Pekalongan |
-| 5 | Ambarawa | Salatiga, Pekalongan, Magelang |
-| 6 | Magelang | Salatiga, Pekalongan, DesaA ditemukan |
-
-Ketika Magelang diperiksa, DesaA ditemukan melalui jalur:
+Solusi jalur:
 
 ```text
 Semarang -> Ungaran -> Ambarawa -> Magelang -> DesaA
 ```
 
-### Perhitungan cost
+Cost: `15 + 10 + 25 + 40 = 90 KM`.
 
-```text
-Semarang -> Ungaran       = 15 KM
-Ungaran -> Ambarawa       = 10 KM
-Ambarawa -> Magelang      = 25 KM
-Magelang -> DesaA         = 40 KM
-
-Total = 15 + 10 + 25 + 40 = 90 KM
-```
-
-### Pohon pencarian BFS
+Pohon pencarian yang relevan:
 
 ```text
 Semarang
-├── Kendal
-│   └── Batang
-│       └── Pekalongan
+├── Kendal -> Batang -> Pekalongan
 └── Ungaran
-    ├── Ambarawa
-    │   └── Magelang
-    │       └── DesaA (tujuan)
-    └── Salatiga
+	├── Ambarawa -> Magelang -> DesaA (tujuan)
+	└── Salatiga -> Boyolali -> Solo
 ```
 
-### Hasil BFS
+## 3. DFS
 
-```text
-Jalur: Semarang -> Ungaran -> Ambarawa -> Magelang -> DesaA
-Cost: 90 KM
-```
+DFS menggunakan stack LIFO. Node paling kiri adalah bagian atas stack.
 
----
+| Iterasi | Node diekspansi | Isi stack setelah ekspansi | Explored | Solusi? |
+|---:|---|---|---|---|
+| 0 | Semarang | Ungaran, Kendal | Semarang | Tidak |
+| 1 | Ungaran | Salatiga, Ambarawa, Kendal | Semarang, Ungaran | Tidak |
+| 2 | Salatiga | Boyolali, Ambarawa, Kendal | ..., Salatiga | Tidak |
+| 3 | Boyolali | Solo, Ambarawa, Kendal | ..., Boyolali | Tidak |
+| 4 | Solo | DesaA, Sragen, Ambarawa, Kendal | ..., Solo | Tidak |
+| 5 | DesaA | - | ..., DesaA | YA |
 
-## 3. Depth-First Search (DFS)
-
-### Cara kerja
-
-DFS menggunakan **stack** dengan aturan LIFO (*Last In, First Out*). Kota yang terakhir dimasukkan akan diproses lebih dahulu. DFS menyusuri satu cabang sedalam mungkin sebelum mencoba cabang lain.
-
-Kota paling kiri pada tabel adalah bagian atas stack yang akan diproses berikutnya.
-
-### Simulasi stack
-
-| Langkah | Kota yang diproses | Isi stack setelah tetangga ditambahkan |
-|---:|---|---|
-| 0 | - | Semarang |
-| 1 | Semarang | Ungaran, Kendal |
-| 2 | Ungaran | Salatiga, Ambarawa, Kendal |
-| 3 | Salatiga | Boyolali, Ambarawa, Kendal |
-| 4 | Boyolali | Solo, Ambarawa, Kendal |
-| 5 | Solo | DesaA, Sragen, Ambarawa, Kendal |
-| 6 | DesaA | Tujuan ditemukan |
-
-Jalur yang ditemukan DFS adalah:
+Solusi jalur:
 
 ```text
 Semarang -> Ungaran -> Salatiga -> Boyolali -> Solo -> DesaA
 ```
 
-### Perhitungan cost
+Cost: `15 + 20 + 18 + 22 + 30 = 105 KM`.
 
-```text
-Semarang -> Ungaran       = 15 KM
-Ungaran -> Salatiga       = 20 KM
-Salatiga -> Boyolali      = 18 KM
-Boyolali -> Solo          = 22 KM
-Solo -> DesaA             = 30 KM
-
-Total = 15 + 20 + 18 + 22 + 30 = 105 KM
-```
-
-### Pohon pencarian DFS
+Pohon jalur DFS:
 
 ```text
 Semarang
 └── Ungaran
-    └── Salatiga
-        └── Boyolali
-            └── Solo
-                └── DesaA (tujuan)
+	└── Salatiga
+		└── Boyolali
+			└── Solo
+				└── DesaA (tujuan)
 ```
 
-### Hasil DFS
+## 4. UCS
 
-```text
-Jalur: Semarang -> Ungaran -> Salatiga -> Boyolali -> Solo -> DesaA
-Cost: 105 KM
-```
+UCS menggunakan priority queue. Format frontier adalah `node: total cost`.
 
-DFS tidak menjamin jalur dengan cost paling kecil karena DFS memilih cabang berdasarkan kedalaman dan urutan tetangga.
+| Iterasi | Node diekspansi | Priority queue setelah ekspansi | Explored | Solusi? |
+|---:|---|---|---|---|
+| 0 | Semarang (0) | Ungaran:15, Kendal:20 | Semarang | Tidak |
+| 1 | Ungaran (15) | Kendal:20, Ambarawa:25, Salatiga:35 | ..., Ungaran | Tidak |
+| 2 | Kendal (20) | Ambarawa:25, Salatiga:35, Batang:45 | ..., Kendal | Tidak |
+| 3 | Ambarawa (25) | Salatiga:35, Batang:45, Magelang:50 | ..., Ambarawa | Tidak |
+| 4 | Salatiga (35) | Batang:45, Magelang:50, Boyolali:53 | ..., Salatiga | Tidak |
+| 5 | Batang (45) | Magelang:50, Boyolali:53, Pekalongan:75 | ..., Batang | Tidak |
+| 6 | Magelang (50) | Boyolali:53, Pekalongan:75, DesaA:90 | ..., Magelang | Tidak |
+| 7 | DesaA (90) | - | ..., DesaA | YA |
 
----
-
-## 4. Uniform-Cost Search (UCS)
-
-### Cara kerja
-
-UCS menggunakan **priority queue**. Setiap elemen memiliki total cost dari Semarang sampai kota tersebut. Kota dengan total cost terkecil diproses lebih dahulu.
-
-### Simulasi priority queue
-
-Format isi tabel adalah `kota: total cost`.
-
-| Langkah | Kota yang dipilih | Cost | Kandidat setelah diperiksa |
-|---:|---|---:|---|
-| 0 | Semarang | 0 | Ungaran: 15, Kendal: 20 |
-| 1 | Ungaran | 15 | Ambarawa: 25, Salatiga: 35, Kendal: 20 |
-| 2 | Kendal | 20 | Salatiga: 35, Ambarawa: 25, Batang: 45 |
-| 3 | Ambarawa | 25 | Salatiga: 35, Batang: 45, Magelang: 50 |
-| 4 | Salatiga | 35 | Batang: 45, Magelang: 50, Boyolali: 53 |
-| 5 | Batang | 45 | Magelang: 50, Boyolali: 53, Pekalongan: 75 |
-| 6 | Magelang | 50 | Boyolali: 53, Pekalongan: 75, DesaA: 90 |
-| 7 | DesaA | 90 | Tujuan ditemukan |
-
-Jalur dengan total cost paling kecil adalah:
+Solusi jalur UCS:
 
 ```text
 Semarang -> Ungaran -> Ambarawa -> Magelang -> DesaA
 ```
 
-### Perhitungan cost
+Total cost minimum: `90 KM`.
 
-```text
-15 + 10 + 25 + 40 = 90 KM
-```
+## 5. Ringkasan Kasus 1
 
-### Hasil UCS
-
-```text
-Jalur: Semarang -> Ungaran -> Ambarawa -> Magelang -> DesaA
-Cost: 90 KM
-```
-
-UCS menemukan cost minimum karena selalu memproses kandidat dengan total cost terkecil.
+| Metode | Jalur | Cost |
+|---|---|---:|
+| BFS | Semarang -> Ungaran -> Ambarawa -> Magelang -> DesaA | 90 KM |
+| DFS | Semarang -> Ungaran -> Salatiga -> Boyolali -> Solo -> DesaA | 105 KM |
+| UCS | Semarang -> Ungaran -> Ambarawa -> Magelang -> DesaA | 90 KM |
 
 ---
 
-## 5. Perbandingan Kasus 1
+# Kasus 2 - Rute Kapal di Sulawesi Selatan
 
-| Metode | Jalur | Jumlah langkah | Cost |
-|---|---|---:|---:|
-| BFS | Semarang -> Ungaran -> Ambarawa -> Magelang -> DesaA | 4 | 90 KM |
-| DFS | Semarang -> Ungaran -> Salatiga -> Boyolali -> Solo -> DesaA | 5 | 105 KM |
-| UCS | Semarang -> Ungaran -> Ambarawa -> Magelang -> DesaA | 4 | 90 KM |
-
----
-
-# Kasus 2: Rute Kapal di Sulawesi Selatan
-
-## 1. Data Masalah
-
-- Titik awal: **Makassar**
-- Tujuan: **PasarB**
-- Satuan biaya: **Jam**
-- Jalan bersifat dua arah karena graph menggunakan `directed=False`.
-
----
-
-## 2. Breadth-First Search (BFS)
-
-### Simulasi queue
-
-| Langkah | Kota yang diproses | Isi queue setelah tetangga ditambahkan |
-|---:|---|---|
-| 0 | - | Makassar |
-| 1 | Makassar | ParePare, Jeneponto |
-| 2 | ParePare | Jeneponto, Palopo |
-| 3 | Jeneponto | Palopo, Bira |
-| 4 | Palopo | Bira, Kolaka |
-| 5 | Bira | Kolaka, Kendari |
-| 6 | Kolaka | Kendari |
-| 7 | Kendari | BauBau |
-| 8 | BauBau | PasarB ditemukan |
-
-### Pohon pencarian BFS
+## 1. Adjacency List
 
 ```text
-Makassar
-├── ParePare
-│   └── Palopo
-│       └── Kolaka
-└── Jeneponto
-    └── Bira
-        └── Kendari
-            └── BauBau
-                └── PasarB (tujuan)
+Makassar: ParePare(5), Jeneponto(4)
+ParePare: Makassar(5), Palopo(7)
+Palopo: ParePare(7), Kolaka(6)
+Jeneponto: Makassar(4), Bira(3)
+Bira: Jeneponto(3), Kendari(8)
+Kolaka: Palopo(6), Kendari(5)
+Kendari: Kolaka(5), Bira(8), BauBau(6)
+BauBau: Kendari(6), PasarB(4)
+PasarB: BauBau(4)
 ```
 
-### Perhitungan cost
+Node awal adalah **Makassar** dan tujuan adalah **PasarB**.
+
+## 2. BFS
+
+| Iterasi | Node diekspansi | Frontier setelah ekspansi | Explored | Solusi? |
+|---:|---|---|---|---|
+| 0 | Makassar | ParePare, Jeneponto | Makassar | Tidak |
+| 1 | ParePare | Jeneponto, Palopo | Makassar, ParePare | Tidak |
+| 2 | Jeneponto | Palopo, Bira | ..., Jeneponto | Tidak |
+| 3 | Palopo | Bira, Kolaka | ..., Palopo | Tidak |
+| 4 | Bira | Kolaka, Kendari | ..., Bira | Tidak |
+| 5 | Kolaka | Kendari | ..., Kolaka | Tidak |
+| 6 | Kendari | BauBau | ..., Kendari | Tidak |
+| 7 | BauBau | PasarB | ..., BauBau | Tidak |
+| 8 | PasarB | - | ..., PasarB | YA |
+
+Solusi jalur:
 
 ```text
-Makassar -> Jeneponto = 4 jam
-Jeneponto -> Bira     = 3 jam
-Bira -> Kendari       = 8 jam
-Kendari -> BauBau     = 6 jam
-BauBau -> PasarB      = 4 jam
-
-Total = 4 + 3 + 8 + 6 + 4 = 25 jam
+Makassar -> Jeneponto -> Bira -> Kendari -> BauBau -> PasarB
 ```
 
-### Hasil BFS
+Cost: `4 + 3 + 8 + 6 + 4 = 25 jam`.
+
+## 3. DFS
+
+| Iterasi | Node diekspansi | Isi stack setelah ekspansi | Explored | Solusi? |
+|---:|---|---|---|---|
+| 0 | Makassar | Jeneponto, ParePare | Makassar | Tidak |
+| 1 | Jeneponto | Bira, ParePare | Makassar, Jeneponto | Tidak |
+| 2 | Bira | Kendari, ParePare | ..., Bira | Tidak |
+| 3 | Kendari | BauBau, Kolaka, ParePare | ..., Kendari | Tidak |
+| 4 | BauBau | PasarB, Kolaka, ParePare | ..., BauBau | Tidak |
+| 5 | PasarB | - | ..., PasarB | YA |
+
+Solusi jalur:
 
 ```text
-Jalur: Makassar -> Jeneponto -> Bira -> Kendari -> BauBau -> PasarB
-Cost: 25 jam
+Makassar -> Jeneponto -> Bira -> Kendari -> BauBau -> PasarB
 ```
 
----
+Cost: `4 + 3 + 8 + 6 + 4 = 25 jam`.
 
-## 3. Depth-First Search (DFS)
+## 4. UCS
 
-### Simulasi stack
+| Iterasi | Node diekspansi | Priority queue setelah ekspansi | Explored | Solusi? |
+|---:|---|---|---|---|
+| 0 | Makassar (0) | Jeneponto:4, ParePare:5 | Makassar | Tidak |
+| 1 | Jeneponto (4) | ParePare:5, Bira:7 | ..., Jeneponto | Tidak |
+| 2 | ParePare (5) | Bira:7, Palopo:12 | ..., ParePare | Tidak |
+| 3 | Bira (7) | Palopo:12, Kendari:15 | ..., Bira | Tidak |
+| 4 | Palopo (12) | Kendari:15, Kolaka:18 | ..., Palopo | Tidak |
+| 5 | Kendari (15) | Kolaka:18, BauBau:21 | ..., Kendari | Tidak |
+| 6 | Kolaka (18) | BauBau:21 | ..., Kolaka | Tidak |
+| 7 | BauBau (21) | PasarB:25 | ..., BauBau | Tidak |
+| 8 | PasarB (25) | - | ..., PasarB | YA |
 
-| Langkah | Kota yang diproses | Isi stack setelah tetangga ditambahkan |
-|---:|---|---|
-| 0 | - | Makassar |
-| 1 | Makassar | Jeneponto, ParePare |
-| 2 | Jeneponto | Bira, ParePare |
-| 3 | Bira | Kendari, ParePare |
-| 4 | Kendari | BauBau, Kolaka, ParePare |
-| 5 | BauBau | PasarB, Kolaka, ParePare |
-| 6 | PasarB | Tujuan ditemukan |
-
-### Pohon pencarian DFS
+Solusi jalur:
 
 ```text
-Makassar
-└── Jeneponto
-    └── Bira
-        └── Kendari
-            └── BauBau
-                └── PasarB (tujuan)
+Makassar -> Jeneponto -> Bira -> Kendari -> BauBau -> PasarB
 ```
 
-### Perhitungan cost
+Total cost minimum: `25 jam`.
 
-```text
-Makassar -> Jeneponto = 4 jam
-Jeneponto -> Bira     = 3 jam
-Bira -> Kendari       = 8 jam
-Kendari -> BauBau     = 6 jam
-BauBau -> PasarB      = 4 jam
+## 5. Ringkasan Kasus 2
 
-Total = 25 jam
-```
-
-### Hasil DFS
-
-```text
-Jalur: Makassar -> Jeneponto -> Bira -> Kendari -> BauBau -> PasarB
-Cost: 25 jam
-```
-
----
-
-## 4. Uniform-Cost Search (UCS)
-
-### Simulasi priority queue
-
-| Langkah | Kota yang dipilih | Cost | Kandidat setelah diperiksa |
-|---:|---|---:|---|
-| 0 | Makassar | 0 | Jeneponto: 4, ParePare: 5 |
-| 1 | Jeneponto | 4 | ParePare: 5, Bira: 7 |
-| 2 | ParePare | 5 | Bira: 7, Palopo: 12 |
-| 3 | Bira | 7 | Palopo: 12, Kendari: 15 |
-| 4 | Palopo | 12 | Kendari: 15, Kolaka: 18 |
-| 5 | Kendari | 15 | Kolaka: 18, BauBau: 21 |
-| 6 | Kolaka | 18 | BauBau: 21 |
-| 7 | BauBau | 21 | PasarB: 25 |
-| 8 | PasarB | 25 | Tujuan ditemukan |
-
-### Pohon jalur UCS
-
-```text
-Makassar (0)
-└── Jeneponto (4)
-    └── Bira (7)
-        └── Kendari (15)
-            └── BauBau (21)
-                └── PasarB (25)
-```
-
-Angka dalam kurung adalah total cost dari Makassar sampai kota tersebut.
-
-### Perhitungan cost
-
-```text
-4 + 3 + 8 + 6 + 4 = 25 jam
-```
-
-### Hasil UCS
-
-```text
-Jalur: Makassar -> Jeneponto -> Bira -> Kendari -> BauBau -> PasarB
-Cost: 25 jam
-```
-
----
-
-## 5. Perbandingan Kasus 2
-
-| Metode | Jalur | Jumlah langkah | Cost |
-|---|---|---:|---:|
-| BFS | Makassar -> Jeneponto -> Bira -> Kendari -> BauBau -> PasarB | 5 | 25 jam |
-| DFS | Makassar -> Jeneponto -> Bira -> Kendari -> BauBau -> PasarB | 5 | 25 jam |
-| UCS | Makassar -> Jeneponto -> Bira -> Kendari -> BauBau -> PasarB | 5 | 25 jam |
+| Metode | Jalur | Cost |
+|---|---|---:|
+| BFS | Makassar -> Jeneponto -> Bira -> Kendari -> BauBau -> PasarB | 25 jam |
+| DFS | Makassar -> Jeneponto -> Bira -> Kendari -> BauBau -> PasarB | 25 jam |
+| UCS | Makassar -> Jeneponto -> Bira -> Kendari -> BauBau -> PasarB | 25 jam |
 
 ---
 
 # Kesimpulan
 
-- **BFS** memakai queue FIFO dan mencari berdasarkan tingkat kedalaman.
-- **DFS** memakai stack LIFO dan menyusuri satu cabang sedalam mungkin.
-- **UCS** memakai priority queue dan selalu memilih total cost terkecil.
-- Pada Kasus 1, BFS dan UCS menghasilkan cost 90 KM, sedangkan DFS menghasilkan 105 KM.
+- BFS memakai queue FIFO dan memeriksa node berdasarkan tingkat kedalaman.
+- DFS memakai stack LIFO dan menyusuri satu cabang sedalam mungkin.
+- UCS memakai priority queue dan memilih total cost terkecil.
+- Pada Kasus 1, BFS dan UCS menghasilkan 90 KM, sedangkan DFS menghasilkan 105 KM.
 - Pada Kasus 2, ketiga metode menghasilkan jalur yang sama dengan cost 25 jam.
-- UCS paling tepat digunakan ketika tujuan utama adalah mencari jalur dengan biaya minimum.
